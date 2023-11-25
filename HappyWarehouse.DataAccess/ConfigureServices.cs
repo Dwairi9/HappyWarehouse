@@ -7,19 +7,21 @@ using Microsoft.EntityFrameworkCore;
 using HappyWarehouse.DataAccess.Seeds;
 using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
+using HappyWarehouse.DataAccess.Repositories.IRepsitories;
+using HappyWarehouse.DataAccess.Repositories;
 
 namespace HappyWarehouse.DataAccess
 {
     public static class ConfigureServices
     {
-        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddDataAccessServices(this IServiceCollection services, IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrEmpty(connectionString)) 
             {
                 throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             }
-            //System.Diagnostics.Debugger.Launch();
+
             string path = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
             connectionString = connectionString.Replace("{AppDir}", path);
 
@@ -28,18 +30,13 @@ namespace HappyWarehouse.DataAccess
 
             services.AddScoped<SeedHelper>();
             services.AddScoped<AuditableEntitySaveChangesInterceptor>();
+            services.AddTransient(typeof(IUnitOfWork), typeof(UnitOfWork));
+            services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
             services.AddIdentity<ApplicationUser, ApplicationRole>()
                     .AddRoleManager<RoleManager<ApplicationRole>>()
                     .AddEntityFrameworkStores<HappyWarehouseDbContext>()
                     .AddDefaultTokenProviders();
-
-            //services.AddDefaultIdentity<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<HappyWarehouseDbContext>();
-            //.AddEntityFrameworkStores<HappyWarehouseDbContext>().AddDefaultTokenProviders();
-            //services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
-            //    .AddRoles<IdentityRole>()
-            //    .AddEntityFrameworkStores<HappyWarehouseDbContext>();
-            //.AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
-
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Remove("role");
 
             //services.AddScoped<IIdentityService, IdentityService>();

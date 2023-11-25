@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Authentication;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 using HappyWarehouse.DataAccess;
-using HappyWarehouse.BusinessLogic.Interfaces.Common;
 using HappyWarehouse.Server.Services;
-using Microsoft.AspNetCore.Identity;
+using HappyWarehouse.DataAccess.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddDataAccessServices(builder.Configuration);
+builder.Services.AddBusinessLogicServices();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();

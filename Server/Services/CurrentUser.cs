@@ -1,4 +1,4 @@
-﻿using HappyWarehouse.BusinessLogic.Interfaces.Common;
+﻿using HappyWarehouse.DataAccess.Common;
 using System.Security.Claims;
 
 namespace HappyWarehouse.Server.Services

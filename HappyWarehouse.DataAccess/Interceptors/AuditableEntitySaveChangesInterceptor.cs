@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
-using HappyWarehouse.BusinessLogic.Interfaces.Common;
 using HappyWarehouse.DataAccess.Entities;
+using HappyWarehouse.DataAccess.Common;
 
 namespace HappyWarehouse.DataAccess.Interceptors
 {

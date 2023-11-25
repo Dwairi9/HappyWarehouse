@@ -1,4 +1,4 @@
-﻿namespace HappyWarehouse.BusinessLogic.Interfaces.Common
+﻿namespace HappyWarehouse.DataAccess.Common
 {
     public interface ICurrentUser
     {

@@ -11,6 +11,6 @@ namespace HappyWarehouse.DataAccess.Entities
 
         [ForeignKey("CountryId")]
         public virtual Country Country { get; set; }
-        public virtual List<Item> Items { get; set; } = new List<Item>();
+        public virtual ICollection<Item> Items { get; set; } = new List<Item>();
     }
 }

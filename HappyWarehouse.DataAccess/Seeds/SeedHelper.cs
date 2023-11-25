@@ -82,7 +82,7 @@ namespace HappyWarehouse.DataAccess.Seeds
                 var adminUserName = "admin@happywarehouse.com";
                 var adminUser = new ApplicationUser { UserName = adminUserName, Email = adminUserName, FullName = "Admin", Id = 1 };
 
-                await _userManager.CreateAsync(adminUser, "“P@ssw0rd");
+                await _userManager.CreateAsync(adminUser, "P@ssw0rd");
                 adminUser = await _userManager.FindByNameAsync(adminUserName);
                 await _userManager.AddToRoleAsync(adminUser!, "Admin");
             }

@@ -1,10 +1,7 @@
-﻿using Duende.IdentityServer.EntityFramework.Options;
-using HappyWarehouse.DataAccess.Entities;
+﻿using HappyWarehouse.DataAccess.Entities;
 using HappyWarehouse.DataAccess.Interceptors;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace HappyWarehouse.DataAccess.DataContext
 {
