@@ -11,9 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HappyWarehouse.Shared", "Sh
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{FD67F0AB-55DC-43CD-9AFB-4CC78D0647BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HappyWarehouse.BusinessLogic", "HappyWarehouse.BusinessLogic\HappyWarehouse.BusinessLogic.csproj", "{51D33F3D-5C06-49D0-9FDA-CDD9AD00C284}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HappyWarehouse.BusinessLogic", "HappyWarehouse.BusinessLogic\HappyWarehouse.BusinessLogic.csproj", "{51D33F3D-5C06-49D0-9FDA-CDD9AD00C284}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HappyWarehouse.DataAccess", "HappyWarehouse.DataAccess\HappyWarehouse.DataAccess.csproj", "{B95BF68E-4FF9-46E4-B820-6B98AD266713}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HappyWarehouse.DataAccess", "HappyWarehouse.DataAccess\HappyWarehouse.DataAccess.csproj", "{B95BF68E-4FF9-46E4-B820-6B98AD266713}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
