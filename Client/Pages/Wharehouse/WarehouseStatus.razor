@@ -1,0 +1,89 @@
+﻿@inject ApiClientService service
+
+<div class="row">
+    <div class="col-12 d-flex">
+        <div class="col-6">
+            <h1>Warehouses Status</h1>
+        </div>
+    </div>
+</div>
+
+<style>
+    .thead-light span {
+        cursor: pointer;
+    }
+
+    .thead-light i {
+        color: darkblue;
+        padding: 5px;
+    }
+</style>
+
+@if (warehouses == null)
+{
+    <div class="loader-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Warehouse Name</th>
+                <th>Items Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var warehouse in warehouses)
+            {
+                <tr>
+                    <td>@warehouse.Name</td>
+                    <td>@warehouse.Items.Count()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<div>
+    <Pager PageIndex=@paginatedList.PageIndex TotalPages=@paginatedList.TotalPages OnClick="PageIndexChanged"
+           HasNextPage=@paginatedList.HasNextPage HasPreviousPage=@paginatedList.HasPreviousPage>
+    </Pager>
+</div>
+
+@code {
+    PaginatedList<WarehouseDto> paginatedList = new PaginatedList<WarehouseDto>();
+    IEnumerable<WarehouseDto> warehouses;
+    WarehouseDto warehouseDto = new WarehouseDto();
+
+    int? pageNumber = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private async Task GetData()
+    {
+        paginatedList = await service.GetPagedResult<WarehouseDto>(pageNumber, "Warehouse/GetWarehousesPaged");
+        warehouses = paginatedList.Items;
+    }
+
+    private async void PageIndexChanged(int newPageNumber)
+    {
+        if (newPageNumber < 1 || newPageNumber > paginatedList.TotalPages)
+        {
+            return;
+        }
+
+        pageNumber = newPageNumber;
+        await GetData();
+        StateHasChanged();
+    }
+
+    private async void DataChanged()
+    {
+        await GetData();
+        StateHasChanged();
+    }
+}

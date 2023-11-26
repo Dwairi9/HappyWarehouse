@@ -4,6 +4,7 @@ using HappyWarehouse.Server.Services;
 using HappyWarehouse.DataAccess.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer; // NOTE: THIS LINE OF CODE IS NEWLY ADDED
 using Microsoft.IdentityModel.Tokens;
+using HappyWarehouse.Server.Middlewares;
 
 try
 {
@@ -12,10 +13,9 @@ try
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateAudience = true,
-            ValidAudience = "https://localhost:7089/", // NOTE: ENTER DOMAIN HERE
+            ValidateAudience = false,
             ValidateIssuer = true,
-            ValidIssuer = "https://localhost:7089/", // NOTE: ENTER DOMAIN HERE
+            ValidIssuer = "HappyWarhouseClient",
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("524C1F22-6115-4E16-9B6A-3FBF185308F2")) // NOTE: THIS SHOULD BE A SECRET KEY NOT TO BE SHARED; A GUID IS RECOMMENDED. DO NOT REUSE THIS GUID.
@@ -80,7 +80,8 @@ try
     app.MapControllers();
     app.MapFallbackToFile("index.html");
 
-    app.Run();
+	app.UseMiddleware<CustomAuthorizationMiddleware>();
+	app.Run();
 }
 catch (Exception ex)
 {

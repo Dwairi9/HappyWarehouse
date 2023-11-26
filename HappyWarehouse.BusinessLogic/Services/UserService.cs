@@ -4,10 +4,10 @@ using HappyWarehouse.BusinessLogic.DTOs.QueryOptions;
 using HappyWarehouse.BusinessLogic.DTOs;
 using HappyWarehouse.DataAccess.Entities;
 using HappyWarehouse.DataAccess.Repositories.IRepsitories;
-using X.PagedList;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using HappyWarehouse.BusinessLogic.Services.IServices;
+using HappyWarehouse.Shared.Common;
 
 namespace HappyWarehouse.BusinessLogic.Services
 {
@@ -40,12 +40,28 @@ namespace HappyWarehouse.BusinessLogic.Services
             return _mapper.Map<List<ApplicationUser>, List<UserDto>>(users);
         }
 
-        public async Task<IPagedList<UserDto>> GetUsersPaged(QueryOption queryOption)
+        public async Task<PaginatedList<UserDto>> GetUsersPaged(QueryOption queryOption)
         {
-            var users = await _unitOfWork.Repository<ApplicationUser>().Entities
-                .Where(i => (string.IsNullOrEmpty(queryOption.Name) || i.FullName == queryOption.Name)).ToPagedListAsync(queryOption.Page, queryOption.Size);
+            var roles = await GetRoles();
+            var query = _unitOfWork.Repository<ApplicationUser>().Entities
+                .Where(i => (string.IsNullOrEmpty(queryOption.Name) || i.FullName == queryOption.Name));
 
-            return _mapper.Map<IPagedList<ApplicationUser>, IPagedList<UserDto>>(users);
+            var users = await PaginatedList<ApplicationUser>.CreateAsync(query, queryOption.Page, queryOption.Size);
+            var usersDto = _mapper.Map<PaginatedList<ApplicationUser>, PaginatedList<UserDto>>(users);
+
+            foreach (var user in usersDto.Items)
+            {
+                user.RoleName = roles.FirstOrDefault(r => r.Id == user.RoleId).Name;
+            }
+
+            return usersDto;
+        }
+
+        public async Task<List<RoleDto>> GetRoles()
+        {
+            var roles = await _unitOfWork.Repository<ApplicationRole>().Entities.ToListAsync();
+
+            return _mapper.Map<List<ApplicationRole>, List<RoleDto>>(roles);
         }
 
         public async Task<QueryResult<bool>> AddUser(UserDto userDto)
@@ -60,12 +76,12 @@ namespace HappyWarehouse.BusinessLogic.Services
                 };
             }
 
-            var user = new ApplicationUser { UserName = userDto.Email, Email = userDto.Email, FullName = userDto.FullName};
+            var user = new ApplicationUser { UserName = userDto.Email, Email = userDto.Email, FullName = userDto.FullName, RoleId = userDto.RoleId};
 
             await _userManager.CreateAsync(user, "P@ssw0rd");
             user = await _userManager.FindByNameAsync(userDto.Email);
 
-            var role = await _roleManager.FindByIdAsync(userDto.RoleId);
+            var role = await _roleManager.FindByIdAsync(userDto.RoleId.ToString());
             await _userManager.AddToRoleAsync(user!, role.Name);
 
             return new QueryResult<bool>()
@@ -88,9 +104,10 @@ namespace HappyWarehouse.BusinessLogic.Services
 
             user.FullName = userDto.FullName;
             user.Active = userDto.Active;
+            user.RoleId = userDto.RoleId;
             await _unitOfWork.Repository<ApplicationUser>().UpdateAsync(user);
 
-            var role = await _roleManager.FindByIdAsync(userDto.RoleId);
+            var role = await _roleManager.FindByIdAsync(userDto.RoleId.ToString());
             if (!(await _userManager.IsInRoleAsync(user, role.Name))) 
             {
                 var userRoles = await _userManager.GetRolesAsync(user);
@@ -113,6 +130,14 @@ namespace HappyWarehouse.BusinessLogic.Services
                 {
                     Success = false,
                     Message = "User NOT found.",
+                };
+            }
+            else if (user.RoleId == 1) 
+            {
+                return new QueryResult<bool>()
+                {
+                    Success = false,
+                    Message = "Admin User could not be deleted.",
                 };
             }
 

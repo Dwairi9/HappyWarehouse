@@ -8,6 +8,7 @@ namespace HappyWarehouse.Shared
         public string email { get; set; }
         public string jwtBearer { get; set; }
         public bool success { get; set; }
+        public string role { get; set; }
     }
 
     public class LoginModel

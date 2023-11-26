@@ -1,0 +1,98 @@
+﻿@inject ApiClientService service
+
+<style>
+    .thead-light span {
+        cursor: pointer;
+    }
+
+    .thead-light i {
+        color: darkblue;
+        padding: 5px;
+    }
+
+    .table{
+        border: 2px solid #b3c0f3;
+    }
+</style>
+
+@if (items == null)
+{
+    <div class="loader-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+}
+else
+{
+    <div class="dash-card">
+        <div class="row">
+            <div class="col-12 d-flex">
+                <div class="col-6">
+                    <h1>Top 10 hight quantity Items</h1>
+                </div>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Warehouse Name</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in TopItems)
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.WarehouseName</td>
+                        <td>@item.Qty </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="dash-card mt-5">
+        <div class="row">
+            <div class="col-12 d-flex">
+                <div class="col-6">
+                    <h1>Top 10 low quantity Items</h1>
+                </div>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Warehouse Name</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in LowItems)
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.WarehouseName</td>
+                        <td>@item.Qty </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    IEnumerable<ItemDto> items;
+    public List<ItemDto> TopItems { get; set; }
+    public List<ItemDto> LowItems { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        items = await service.GetList<ItemDto>("Item/GetItems");
+        TopItems = items.OrderByDescending(i => i.Qty).Take(10).ToList();
+        LowItems = items.OrderBy(i => i.Qty).Take(10).ToList();
+    }
+}

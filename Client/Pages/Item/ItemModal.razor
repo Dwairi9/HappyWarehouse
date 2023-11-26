@@ -1,0 +1,124 @@
+﻿@inject IJSRuntime jsRuntime
+@inject ApiClientService service
+@inject IJSRuntime jsRuntime
+
+<div class="modal" tabindex="-1" role="dialog" id="itemModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ItemDto" OnValidSubmit="@HandleValidSubmit" Context="formContext">
+                    <DataAnnotationsValidator />
+                    <input type="hidden" @bind-value="@ItemDto.Id" />
+                    <span class="text-danger">@result</span>
+
+                    <div class="form-group mt-3">
+                        <label for="name">Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="@ItemDto.Name" />
+                        <ValidationMessage For="@(() => ItemDto.Name)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="warehouseId">Warehouse</label>
+
+                        <RadzenDropDown FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        FilterOperator="Radzen.StringFilterOperator.StartsWith" AllowFiltering="true"
+                                        Data=@Warehouses TextProperty="Name" ValueProperty="Id"
+                                        @bind-Value=ItemDto.WarehouseId Style="width: 100%;" />
+
+                        <div class="validation-message">@warehouseValidationMessage</div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="address">Qty</label>
+                        <InputNumber id="address" class="form-control" @bind-Value="@ItemDto.Qty"/>
+                        <ValidationMessage For="@(() => ItemDto.Qty)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="city">Cost Price</label>
+                        <InputNumber id="city" class="form-control" @bind-Value="@ItemDto.CostPrice" />
+                        <ValidationMessage For="@(() => ItemDto.CostPrice)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="city">MSRP Price</label>
+                        <InputNumber id="city" class="form-control" @bind-Value="@ItemDto.MSRPPrice" />
+                        <ValidationMessage For="@(() => ItemDto.MSRPPrice)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="city">SKU</label>
+                        <InputText id="city" class="form-control" @bind-Value="@ItemDto.SKU" />
+                        <ValidationMessage For="@(() => ItemDto.SKU)" />
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+
+    [Parameter]
+    public ItemDto ItemDto { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    List<WarehouseDto> Warehouses = new List<WarehouseDto>();
+    string result = string.Empty;
+    string warehouseValidationMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Warehouses = await service.GetList<WarehouseDto>("Warehouse/GetWarehouses");
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (ItemDto.WarehouseId == 0)
+        {
+            warehouseValidationMessage = "The Warehouse field is required.";
+        }
+        else
+        {
+            warehouseValidationMessage = string.Empty;
+            var response = new QueryResult<bool>();
+
+            if (ItemDto.Id == 0)
+            {
+                response = await service.Add(ItemDto, "Item/Add");
+            }
+            else
+            {
+                response = await service.Update(ItemDto, "Item/Update");
+            }
+
+            if (response.Success)
+            {
+                string result = string.Empty;
+                await jsRuntime.InvokeAsync<object>("CloseModal", "itemModal");
+                DataChanged?.Invoke();
+            }
+            else
+            {
+                result = response.Message;
+                StateHasChanged();
+            }
+        }
+    }
+}

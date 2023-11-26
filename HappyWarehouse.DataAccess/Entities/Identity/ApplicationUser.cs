@@ -6,5 +6,6 @@ namespace HappyWarehouse.DataAccess.Entities
     {
         public string FullName { get; set; }
         public bool Active { get; set; }
+        public int RoleId { get; set; }
     }
 }

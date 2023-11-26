@@ -19,20 +19,22 @@ namespace HappyWarehouse.DataAccess.Repositories
 
         public async Task<T> AddAsync(T entity)
         {
-            await _dbContext.Set<T>().AddAsync(entity);
+            _dbContext.Set<T>().Add(entity);
+            await _dbContext.SaveChangesAsync();
+
             return entity;
         }
 
-        public Task UpdateAsync(T entity)
+        public async Task UpdateAsync(T entity)
         {
-            _dbContext.Entry(entity).CurrentValues.SetValues(entity);
-            return Task.CompletedTask;
+            _dbContext.Set<T>().Update(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
-        public Task DeleteAsync(T entity)
+        public async Task DeleteAsync(T entity)
         {
             _dbContext.Set<T>().Remove(entity);
-            return Task.CompletedTask;
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task<List<T>> GetAllAsync()

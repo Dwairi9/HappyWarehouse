@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
-using HappyItem.BusinessLogic.Services.IServices;
+using HappyWarehouse.BusinessLogic.Services.IServices;
 using HappyWarehouse.BusinessLogic.DTOs.Common;
 using HappyWarehouse.BusinessLogic.DTOs;
 using HappyWarehouse.DataAccess.Entities;
 using HappyWarehouse.DataAccess.Repositories.IRepsitories;
 using Microsoft.EntityFrameworkCore;
-using X.PagedList;
 using HappyWarehouse.BusinessLogic.DTOs.QueryOptions;
+using HappyWarehouse.Shared.Common;
 
 namespace HappyWarehouse.BusinessLogic.Services
 {
@@ -30,23 +30,24 @@ namespace HappyWarehouse.BusinessLogic.Services
 
         public async Task<List<ItemDto>> GetItems()
         {
-            var items = await _unitOfWork.Repository<Item>().Entities.ToListAsync();
+            var items = await _unitOfWork.Repository<Item>().Entities.Include(w => w.Warehouse).ToListAsync();
 
             return _mapper.Map<List<Item>, List<ItemDto>>(items);
         }
 
-        public async Task<IPagedList<ItemDto>> GetItemsPaged(ItemQueryOption queryOption)
+        public async Task<PaginatedList<ItemDto>> GetItemsPaged(ItemQueryOption queryOption)
         {
-            var items = await _unitOfWork.Repository<Item>().Entities
-                .Where(i=> (queryOption.WarehouseId == null || i.WarehouseId == queryOption.WarehouseId) &&
-                 (string.IsNullOrEmpty(queryOption.Name) || i.Name == queryOption.Name)).ToPagedListAsync(queryOption.Page, queryOption.Size);
+            var query = _unitOfWork.Repository<Item>().Entities.Include(w => w.Warehouse)
+                .Where(i => (queryOption.WarehouseId == null || i.WarehouseId == queryOption.WarehouseId) &&
+                 (string.IsNullOrEmpty(queryOption.Name) || i.Name == queryOption.Name));
 
-            return _mapper.Map<IPagedList<Item>, IPagedList<ItemDto>>(items);
+            var items = await PaginatedList<Item>.CreateAsync(query, queryOption.Page, queryOption.Size);
+            return _mapper.Map<PaginatedList<Item>, PaginatedList<ItemDto>>(items);
         }
 
         public async Task<QueryResult<bool>> AddItem(ItemDto itemDto)
         {
-            var existItem = await _unitOfWork.Repository<Item>().Entities.FirstOrDefaultAsync(w => w.Name == itemDto.Name);
+            var existItem = await _unitOfWork.Repository<Item>().Entities.FirstOrDefaultAsync(w => w.WarehouseId == itemDto.WarehouseId && w.Name == itemDto.Name);
             if (existItem != null)
             {
                 return new QueryResult<bool>()
@@ -67,7 +68,7 @@ namespace HappyWarehouse.BusinessLogic.Services
 
         public async Task<QueryResult<bool>> UpdateItem(ItemDto itemDto)
         {
-            var existItem = await _unitOfWork.Repository<Item>().Entities.FirstOrDefaultAsync(w => w.Id != itemDto.Id && w.Name == itemDto.Name);
+            var existItem = await _unitOfWork.Repository<Item>().Entities.FirstOrDefaultAsync(w => w.Id != itemDto.Id && w.WarehouseId == itemDto.WarehouseId && w.Name == itemDto.Name);
             if (existItem != null)
             {
                 return new QueryResult<bool>()

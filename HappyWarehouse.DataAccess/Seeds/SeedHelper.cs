@@ -80,7 +80,7 @@ namespace HappyWarehouse.DataAccess.Seeds
             if (user == null)
             {
                 var adminUserName = "admin@happywarehouse.com";
-                var adminUser = new ApplicationUser { UserName = adminUserName, Email = adminUserName, FullName = "Admin", Id = 1 };
+                var adminUser = new ApplicationUser { UserName = adminUserName, Email = adminUserName, FullName = "Admin", Id = 1, RoleId = 1 };
 
                 await _userManager.CreateAsync(adminUser, "P@ssw0rd");
                 adminUser = await _userManager.FindByNameAsync(adminUserName);

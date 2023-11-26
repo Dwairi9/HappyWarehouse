@@ -1,0 +1,146 @@
+﻿@page "/warehouses"
+@attribute [Authorize]
+@inject ApiClientService service
+@inject NavigationManager NavigationManager
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Warehouse</PageTitle>
+
+<div class="row">
+    <div class="col-12 d-flex">
+        <div class="col-6">
+            <h1>Warehouses</h1>
+        </div>
+        <div class="col-6">
+            <div class="mt-2" style="float: right;">
+                <input type="button" data-bs-toggle="modal" data-bs-target="#warehouseModal" class="btn btn-primary" value="Add Warehouse" @onclick="(() => PrepareForAdd())" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .thead-light span {
+        cursor: pointer;
+    }
+
+    .thead-light i {
+        color: darkblue;
+        padding: 5px;
+    }
+</style>
+
+@if (warehouses == null)
+{
+    <div class="loader-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>CountryName</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var warehouse in warehouses)
+            {
+                <tr>
+                    <td>@warehouse.Name</td>
+                    <td>@warehouse.Address</td>
+                    <td>@warehouse.City</td>
+                    <td>@warehouse.CountryName</td>
+                    <td>
+                        <a @onclick="(() => PrepareForEdit(warehouse))" class="btn btn-primary text-white btn-action" data-bs-toggle="modal" data-bs-target="#warehouseModal" title="Edit"><i class="fa fa-pencil"></i></a>
+                        <a @onclick="(() => PrepareForDelete(warehouse))" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" class="btn btn-primary btn-action" title="Delete" style="color:red;"><i class="fa fa-trash"></i></a>
+                        <a @onclick="() => NavigateToItemsPage(warehouse.Id)" title="Items" class="btn btn-primary text-white btn-action"><i class="fa fa-info"></i></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<div>
+    <Pager PageIndex=@paginatedList.PageIndex TotalPages=@paginatedList.TotalPages OnClick="PageIndexChanged"
+           HasNextPage=@paginatedList.HasNextPage HasPreviousPage=@paginatedList.HasPreviousPage>
+    </Pager>
+</div>
+
+<ConfirmDeleteModal OnClick="@Delete" EntityName="Warehouse" />
+
+<WarehouseModal WarehouseDto=warehouseDto DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</WarehouseModal>
+
+@code {
+    PaginatedList<WarehouseDto> paginatedList = new PaginatedList<WarehouseDto>();
+    IEnumerable<WarehouseDto> warehouses;
+    WarehouseDto warehouseDto = new WarehouseDto();
+    int? pageNumber = 1;
+    string customHeader = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private async Task GetData()
+    {
+        paginatedList = await service.GetPagedResult<WarehouseDto>(pageNumber, "Warehouse/GetWarehousesPaged");
+        warehouses = paginatedList.Items;
+    }
+
+    private void PrepareForAdd()
+    {
+        warehouseDto = new WarehouseDto();
+        customHeader = "Add Warehouse";
+    }
+
+    private void PrepareForEdit(WarehouseDto warehouseObj)
+    {
+        customHeader = "Edit Warehouse";
+        warehouseDto = warehouseObj;
+    }
+
+    private void PrepareForDelete(WarehouseDto warehouseObj)
+    {
+        warehouseDto = warehouseObj;
+    }
+
+    private async Task Delete()
+    {
+        var task = await service.Delete(warehouseDto.Id, "Warehouse/Delete");
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        await GetData();
+        warehouseDto = new WarehouseDto();
+    }
+
+    private async void PageIndexChanged(int newPageNumber)
+    {
+        if (newPageNumber < 1 || newPageNumber > paginatedList.TotalPages)
+        {
+            return;
+        }
+
+        pageNumber = newPageNumber;
+        await GetData();
+        StateHasChanged();
+    }
+
+    private async void DataChanged()
+    {
+        await GetData();
+        StateHasChanged();
+    }
+
+    private void NavigateToItemsPage(int id)
+    {
+        NavigationManager.NavigateTo($"/items/{id}");
+    }
+}

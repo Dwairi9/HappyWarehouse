@@ -1,0 +1,117 @@
+﻿@inject IJSRuntime jsRuntime
+@inject ApiClientService service
+@inject IJSRuntime jsRuntime
+
+<div class="modal" tabindex="-1" role="dialog" id="userModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@UserDto" OnValidSubmit="@HandleValidSubmit" Context="formContext">
+                    <DataAnnotationsValidator />
+                    <input type="hidden" @bind-value="@UserDto.Id" />
+                    <span class="text-danger">@result</span>
+
+                    <div class="form-group mt-3">
+                        <label for="name">Email</label>
+                        <InputText id="name" class="form-control" @bind-Value="@UserDto.Email" disabled=@IsDisabled />
+                        <ValidationMessage For="@(() => UserDto.Email)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="name">Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="@UserDto.FullName" />
+                        <ValidationMessage For="@(() => UserDto.FullName)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="roleId">Role</label>
+
+                        <RadzenDropDown FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        FilterOperator="Radzen.StringFilterOperator.StartsWith" AllowFiltering="true"
+                                        Data=@Roles TextProperty="Name" ValueProperty="Id"
+                                        @bind-Value=UserDto.RoleId Style="width: 100%;" />
+
+                        <div class="validation-message">@roleValidationMessage</div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="address">Active</label>
+                        <InputCheckbox id="address" @bind-Value="@UserDto.Active" />
+                        <ValidationMessage For="@(() => UserDto.Active)" />
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+
+    [Parameter]
+    public UserDto UserDto { get; set; }
+
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    // protected bool IsDisabled { get; set; }
+    List<RoleDto> Roles = new List<RoleDto>();
+    string result = string.Empty;
+    string roleValidationMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // IsDisabled = UserDto.Id != 0;
+        Roles = await service.GetList<RoleDto>("User/GetRoles");
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (UserDto.RoleId == 0)
+        {
+            roleValidationMessage = "The Role field is required.";
+        }
+        else
+        {
+            roleValidationMessage = string.Empty;
+            var response = new QueryResult<bool>();
+
+            if (UserDto.Id == 0)
+            {
+                response = await service.Add(UserDto, "User/Add");
+            }
+            else
+            {
+                response = await service.Update(UserDto, "User/Update");
+            }
+
+            if (response.Success)
+            {
+                string result = string.Empty;
+                await jsRuntime.InvokeAsync<object>("CloseModal", "userModal");
+                DataChanged?.Invoke();
+            }
+            else
+            {
+                result = response.Message;
+                StateHasChanged();
+            }
+        }
+    }
+}

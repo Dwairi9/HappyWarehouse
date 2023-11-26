@@ -1,44 +1,93 @@
-﻿@page "/login"
-@using HappyWarehouse.Shared
-@inject HttpClient Http
-@inject IJSRuntime jsr
+﻿@using HappyWarehouse.Shared
 
-<h3>Login</h3>
+@page "/login"
+@layout LoginLayout
+@inject ApiClientService service
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
 
-<p>@message</p>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" />
+<script href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+<script href="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<link href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" rel="stylesheet" />
 
-<EditForm Model="user" OnValidSubmit="OnValid" style="max-width:500px;">
-	<DataAnnotationsValidator />
-	<ValidationSummary />
-	<div class="mb-2">
-		<InputText class="form-control" @bind-Value="user.email" placeholder="Enter Email"></InputText>
-	</div>
-	<div class="mb-2">
-		<InputText type="password" class="form-control" @bind-Value="user.password" placeholder="Enter Password"></InputText>
-	</div>
-	<div class="mb-2 text-right">
-		<button class="btn btn-secondary" disabled="@isDisabled">login</button>
-	</div>
-</EditForm>
+<style>
+    body {
+        background-color: #19123B !important;
+    }
+
+    .input-control {
+        border: 1px solid #57557A;
+        border-radius: 3px;
+        background: #212042;
+        margin-bottom: 20px;
+        letter-spacing: 1px;
+        width: 90%;
+        height: 40px;
+        color: #aeadc2;
+    }
+
+        .input-control:focus {
+            border: 1px solid #57557A;
+            border-radius: 3px;
+            box-shadow: none;
+            background: #212042;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+</style>
+
+<div class="container">
+    <div class="row d-flex justify-content-center mt-5">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            <div class="card py-3 px-2">
+                <div class="division">
+                    <div class="row">
+                        <div class="col-3"><div class="line l"></div></div>
+                        <div class="col-6"><span>Login</span></div>
+                        <div class="col-3"><div class="line r"></div></div>
+                    </div>
+                </div>
+
+                <p class="text-danger ml-4">@message</p>
+
+                <EditForm Model="userModel" OnValidSubmit="OnValid" class="myform">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <InputText class="input-control ml-4 pl-2" @bind-Value="userModel.email" placeholder="Enter Email"></InputText>
+                        <ValidationMessage For="@(() => userModel.email)" />
+                    </div>
+                    <div class="form-group">
+                        <InputText type="password" class="input-control ml-4 pl-2" @bind-Value="userModel.password" placeholder="Enter Password"></InputText>
+                        <ValidationMessage For="@(() => userModel.password)" />
+                    </div>
+                    <div class="form-group mt-3">
+                        <button type="submit" class="btn btn-block btn-primary btn-lg"><small><i class="far fa-user pr-2"></i>login</small></button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
-	LoginModel user = new LoginModel();
-	string message = string.Empty;
-	bool isDisabled = false;
+    LoginModel userModel = new LoginModel();
+    string message = string.Empty;
 
-	private async Task OnValid()
-	{
-		isDisabled = true;
-		using (var msg = await Http.PostAsJsonAsync<LoginModel>("/api/auth/login", user, System.Threading.CancellationToken.None))
-		{
-			if (msg.IsSuccessStatusCode)
-			{
-				LoginResult result = await msg.Content.ReadFromJsonAsync<LoginResult>();
-				message = result.message;
-				isDisabled = false;
-				if (result.success)
-					await jsr.InvokeVoidAsync("localStorage.setItem", "user", $"{result.email};{result.jwtBearer}").ConfigureAwait(false);
-			}
-		}
-	}
+    private async Task OnValid()
+    {
+        var result = await service.PostAsync<LoginResult>(userModel, "auth/login");
+        message = result.message;
+
+        if (result.success)
+        {
+            await LocalStorage.SetItemAsync<string>("username", userModel.email);
+            await LocalStorage.SetItemAsync<string>("token", result.jwtBearer);
+            await LocalStorage.SetItemAsync<string>("role", result.role);
+            await AuthStateProvider.GetAuthenticationStateAsync();
+
+            NavigationManager.NavigateTo("/");
+        }
+    }
 }

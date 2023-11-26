@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HappyWarehouse.BusinessLogic.DTOs;
 using HappyWarehouse.DataAccess.Entities;
+using HappyWarehouse.Shared.Common;
 
 namespace HappyWarehouse.BusinessLogic
 {
@@ -8,9 +9,21 @@ namespace HappyWarehouse.BusinessLogic
     {
         public MappingProfile()
         {
-            CreateMap<Warehouse, WarehouseDto>();
-            CreateMap<Item, ItemDto>();
-            CreateMap<ApplicationUser, UserDto>();
+            CreateMap<WarehouseDto, Warehouse>();
+            CreateMap<Warehouse, WarehouseDto>()
+                .ForMember(dto=> dto.CountryName, opt=> opt.MapFrom(entity=> entity.Country.Name));
+
+            CreateMap<PaginatedList<Warehouse>, PaginatedList<WarehouseDto>>();
+            CreateMap<ItemDto, Item>().ReverseMap();
+            CreateMap<Item, ItemDto>()
+                .ForMember(dto => dto.WarehouseName, opt => opt.MapFrom(entity => entity.Warehouse.Name));
+
+            CreateMap<PaginatedList<Item>, PaginatedList<ItemDto>>();
+            CreateMap<Country, CountryDto>().ReverseMap();
+            CreateMap<RoleDto, ApplicationRole>().ReverseMap();
+            CreateMap<UserDto, ApplicationUser>().ReverseMap();
+
+            CreateMap<PaginatedList<ApplicationUser>, PaginatedList<UserDto>>();
         }
     }
 }

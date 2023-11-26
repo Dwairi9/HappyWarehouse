@@ -1,0 +1,113 @@
+﻿@inject IJSRuntime jsRuntime
+@inject ApiClientService service
+@inject IJSRuntime jsRuntime
+
+<div class="modal" tabindex="-1" role="dialog" id="warehouseModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@WarehouseDto" OnValidSubmit="@HandleValidSubmit" Context="formContext">
+                    <DataAnnotationsValidator />
+                    @*<ValidationSummary />*@
+                    <input type="hidden" @bind-value="@WarehouseDto.Id" />
+                    <span class="text-danger">@result</span>
+                    <div class="form-group mt-3">
+                        <label for="name">Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="@WarehouseDto.Name" />
+                        <ValidationMessage For="@(() => WarehouseDto.Name)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="address">Address</label>
+                        <InputText id="address" class="form-control" @bind-Value="@WarehouseDto.Address" />
+                        <ValidationMessage For="@(() => WarehouseDto.Address)" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="city">City</label>
+                        <InputText id="city" class="form-control" @bind-Value="@WarehouseDto.City" />
+                        <ValidationMessage For="@(() => WarehouseDto.City)" />
+                    </div>
+                    
+                    <div class="form-group mt-3">
+                        <label for="countryId">Country</label>
+
+                        <RadzenDropDown FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        FilterOperator="Radzen.StringFilterOperator.StartsWith" AllowFiltering="true"
+                                        Data=@Countries TextProperty="Name" ValueProperty="Id"
+                                        @bind-Value=WarehouseDto.CountryId Style="width: 100%;" />
+
+
+                        <div class="validation-message">@countryValidationMessage</div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                   
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+
+    [Parameter]
+    public WarehouseDto WarehouseDto { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    List<CountryDto> Countries = new List<CountryDto>();
+
+    string result = string.Empty;
+    string countryValidationMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Countries = await service.GetList<CountryDto>("Shared/GetCountries");
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (WarehouseDto.CountryId == 0)
+        {
+            countryValidationMessage = "The Country field is required.";
+        }
+        else
+        {
+            countryValidationMessage = string.Empty;
+            var response = new QueryResult<bool>();
+
+            if (WarehouseDto.Id == 0)
+            {
+                response = await service.Add(WarehouseDto, "Warehouse/Add");
+            }
+            else
+            {
+                response = await service.Update(WarehouseDto, "Warehouse/Update");
+            }
+
+            if (response.Success)
+            {
+                await jsRuntime.InvokeAsync<object>("CloseModal", "warehouseModal");
+                DataChanged?.Invoke();
+            }
+            else
+            {
+                result = response.Message;
+                StateHasChanged();
+            }
+        } 
+    }
+}

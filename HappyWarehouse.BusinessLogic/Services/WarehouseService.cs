@@ -6,7 +6,7 @@ using HappyWarehouse.DataAccess.Entities;
 using HappyWarehouse.DataAccess.Repositories.IRepsitories;
 using Microsoft.EntityFrameworkCore;
 using HappyWarehouse.BusinessLogic.DTOs.QueryOptions;
-using X.PagedList;
+using HappyWarehouse.Shared.Common;
 
 namespace HappyWarehouse.BusinessLogic.Services
 {
@@ -30,39 +30,48 @@ namespace HappyWarehouse.BusinessLogic.Services
 
         public async Task<List<WarehouseDto>> GetWarehouses()
         {
-            var warehouses = await _unitOfWork.Repository<Warehouse>().Entities.ToListAsync();
+            var warehouses = await _unitOfWork.Repository<Warehouse>().Entities.Include(w => w.Country).ToListAsync();
 
             return _mapper.Map<List<Warehouse>, List<WarehouseDto>>(warehouses);
         }
 
-        public async Task<IPagedList<WarehouseDto>> GetItemsPaged(QueryOption queryOption)
+        public async Task<PaginatedList<WarehouseDto>> GetWarehousesPaged(QueryOption queryOption)
         {
-            var items = await _unitOfWork.Repository<Warehouse>().Entities
-                .Where(i =>(string.IsNullOrEmpty(queryOption.Name) || i.Name == queryOption.Name))
-                .ToPagedListAsync(queryOption.Page, queryOption.Size);
+            var query = _unitOfWork.Repository<Warehouse>().Entities.Include(w => w.Country).Include(w => w.Items)
+                .Where(i => (string.IsNullOrEmpty(queryOption.Name) || i.Name == queryOption.Name));
 
-            return _mapper.Map<IPagedList<Warehouse>, IPagedList<WarehouseDto>>(items);
+            var warehouses = await PaginatedList<Warehouse>.CreateAsync(query, queryOption.Page, queryOption.Size);
+
+            return _mapper.Map<PaginatedList<Warehouse>, PaginatedList<WarehouseDto>>(warehouses);
         }
 
         public async Task<QueryResult<bool>> AddWarehouse(WarehouseDto warehouseDto)
         {
-            var existWarehouse = await _unitOfWork.Repository<Warehouse>().Entities.FirstOrDefaultAsync(w=> w.Name == warehouseDto.Name);
-            if (existWarehouse != null)
+            try
             {
-                return new QueryResult<bool>() 
+                var existWarehouse = await _unitOfWork.Repository<Warehouse>().Entities.FirstOrDefaultAsync(w => w.Name == warehouseDto.Name);
+                if (existWarehouse != null)
                 {
-                    Success = false,
-                    Message = "Warehouse already exist.",
+                    return new QueryResult<bool>()
+                    {
+                        Success = false,
+                        Message = "Warehouse already exist.",
+                    };
+                }
+
+                var warehouse = _mapper.Map<WarehouseDto, Warehouse>(warehouseDto);
+                var addResult = await _unitOfWork.Repository<Warehouse>().AddAsync(warehouse);
+
+                return new QueryResult<bool>()
+                {
+                    Success = true
                 };
             }
-
-            var warehouse = _mapper.Map<WarehouseDto, Warehouse>(warehouseDto);
-            var addResult = await _unitOfWork.Repository<Warehouse>().AddAsync(warehouse);
-
-            return new QueryResult<bool>() 
+            catch (Exception ex)
             {
-                Success = true
-            };
+
+                throw;
+            }
         }
 
         public async Task<QueryResult<bool>> UpdateWarehouse(WarehouseDto warehouseDto)

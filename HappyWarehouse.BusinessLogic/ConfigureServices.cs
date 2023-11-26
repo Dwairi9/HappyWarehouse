@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using HappyWarehouse.BusinessLogic.Services.IServices;
 using HappyWarehouse.BusinessLogic.Services;
-using HappyItem.BusinessLogic.Services.IServices;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -13,6 +12,7 @@ public static class ConfigureServices
         services.AddScoped<IWarehouseService, WarehouseService>();
         services.AddScoped<IItemService, ItemService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<ICountryService, CountryService>();
 
         return services;
     }

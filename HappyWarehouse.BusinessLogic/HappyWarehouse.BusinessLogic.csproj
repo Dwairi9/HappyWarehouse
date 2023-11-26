@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HappyWarehouse.DataAccess\HappyWarehouse.DataAccess.csproj" />
+    <ProjectReference Include="..\Shared\HappyWarehouse.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

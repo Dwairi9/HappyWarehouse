@@ -16,8 +16,8 @@ namespace HappyWarehouse.Client
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             var state = new AuthenticationState(new ClaimsPrincipal());
-
             string username = await _localStorage.GetItemAsStringAsync("username");
+
             if (!string.IsNullOrEmpty(username))
             {
                 var identity = new ClaimsIdentity(new[]

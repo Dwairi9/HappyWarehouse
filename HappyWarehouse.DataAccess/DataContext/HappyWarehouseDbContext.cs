@@ -27,6 +27,7 @@ namespace HappyWarehouse.DataAccess.DataContext
         public DbSet<Warehouse> Warehouses => Set<Warehouse>();
         public DbSet<Item> Items => Set<Item>();
         public DbSet<Country> Countries => Set<Country>();
+        public DbSet<SystemLog> SystemLogs => Set<SystemLog>();
         #endregion
     }
 }

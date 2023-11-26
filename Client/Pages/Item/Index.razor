@@ -1,0 +1,147 @@
+﻿@page "/items/{WarehouseId:int?}"
+@attribute [Authorize]
+@inject ApiClientService service
+@inject NavigationManager NavigationManager
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Items</PageTitle>
+
+<div class="row">
+    <div class="col-12 d-flex">
+        <div class="col-6">
+            <h1>Items</h1>
+        </div>
+        <div class="col-6">
+            <div class="mt-2" style="float: right;">
+                <input type="button" data-bs-toggle="modal" data-bs-target="#itemModal" class="btn btn-primary" value="Add Item" @onclick="(() => PrepareForAdd())" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .thead-light span {
+        cursor: pointer;
+    }
+
+    .thead-light i {
+        color: darkblue;
+        padding: 5px;
+    }
+</style>
+
+@if (items == null)
+{
+    <div class="loader-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Warehouse Name</th>
+                <th>Qty</th>
+                <th>Cost Price</th>
+                <th>MSRP Price</th>
+                <th>SKU</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in items)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.WarehouseName</td>
+                    <td>@item.Qty </td>
+                    <td>@item.CostPrice</td>
+                    <td>@item.MSRPPrice</td>
+                    <td>@item.SKU</td>
+                    <td>
+                        <a @onclick="(() => PrepareForEdit(item))" class="btn btn-primary text-white btn-action" data-bs-toggle="modal" data-bs-target="#itemModal" title="Edit"><i class="fa fa-pencil"></i></a>
+                        <a @onclick="(() => PrepareForDelete(item))" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" class="btn btn-primary btn-action" title="Delete" style="color:red;"><i class="fa fa-trash"></i></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<div>
+    <Pager PageIndex=@paginatedList.PageIndex TotalPages=@paginatedList.TotalPages OnClick="PageIndexChanged"
+           HasNextPage=@paginatedList.HasNextPage HasPreviousPage=@paginatedList.HasPreviousPage>
+    </Pager>
+</div>
+
+<ConfirmDeleteModal OnClick="@Delete" EntityName="Item" />
+
+<ItemModal ItemDto=itemDto DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</ItemModal>
+
+@code {
+    [Parameter]
+    public int? WarehouseId { get; set; }
+
+    PaginatedList<ItemDto> paginatedList = new PaginatedList<ItemDto>();
+    IEnumerable<ItemDto> items;
+    ItemDto itemDto = new ItemDto();
+
+    int? pageNumber = 1;
+    string customHeader = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private async Task GetData()
+    {
+        paginatedList = await service.GetPagedResult<ItemDto>(pageNumber, "Item/GetItemsPaged", WarehouseId);
+        items = paginatedList.Items;
+    }
+
+    private void PrepareForAdd()
+    {
+        itemDto = new ItemDto();
+        customHeader = "Add Item";
+    }
+
+    private void PrepareForEdit(ItemDto itemObj)
+    {
+        customHeader = "Edit Item";
+        itemDto = itemObj;
+    }
+
+    private void PrepareForDelete(ItemDto itemObj)
+    {
+        itemDto = itemObj;
+    }
+
+    private async Task Delete()
+    {
+        var task = await service.Delete(itemDto.Id, "Item/Delete");
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        await GetData();
+        itemDto = new ItemDto();
+    }
+
+    private async void PageIndexChanged(int newPageNumber)
+    {
+        if (newPageNumber < 1 || newPageNumber > paginatedList.TotalPages)
+        {
+            return;
+        }
+
+        pageNumber = newPageNumber;
+        await GetData();
+        StateHasChanged();
+    }
+
+    private async void DataChanged()
+    {
+        await GetData();
+        StateHasChanged();
+    }
+}

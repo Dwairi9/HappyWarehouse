@@ -1,0 +1,172 @@
+﻿@page "/users"
+@attribute [Authorize]
+@inject ApiClientService service
+@inject NavigationManager NavigationManager
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Users</PageTitle>
+<Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.MiddleRight" />
+
+<div class="row">
+    <div class="col-12 d-flex">
+        <div class="col-6">
+            <h1>Users</h1>
+        </div>
+        <div class="col-6">
+            <div class="mt-2" style="float: right;">
+                <input type="button" data-bs-toggle="modal" data-bs-target="#userModal" class="btn btn-primary" value="Add User" @onclick="(() => PrepareForAdd())" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .thead-light span {
+        cursor: pointer;
+    }
+
+    .thead-light i {
+        color: darkblue;
+        padding: 5px;
+    }
+</style>
+
+@if (users == null)
+{
+    <div class="loader-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Active</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>@user.FullName</td>
+                    <td>@user.RoleName</td>
+                    <td>@user.Active</td>
+                    <td>
+                        <a @onclick="(() => PrepareForEdit(user))" class="btn btn-primary text-white btn-action" data-bs-toggle="modal" data-bs-target="#userModal" title="Edit"><i class="fa fa-pencil"></i></a>
+                        <a @onclick="(() => PrepareForChangePassword(user))" class="btn btn-primary text-white btn-action" data-bs-toggle="modal" data-bs-target="#changePasswordModal" title="Change Password"><i class="fa fa-key"></i></a>
+                        <a @onclick="(() => PrepareForDelete(user))" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" class="btn btn-primary btn-action" title="Delete" style="color:red;"><i class="fa fa-trash"></i></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<div>
+    <Pager PageIndex=@paginatedList.PageIndex TotalPages=@paginatedList.TotalPages OnClick="PageIndexChanged"
+           HasNextPage=@paginatedList.HasNextPage HasPreviousPage=@paginatedList.HasPreviousPage>
+    </Pager>
+</div>
+
+<ConfirmDeleteModal OnClick="@Delete" EntityName="User" />
+
+<UserModal UserDto=userDto DataChanged="@DataChanged" IsDisabled="userDto.Id != 0">
+    <CustomHeader>@customHeader</CustomHeader>
+</UserModal>
+
+<ChangePasswordModal UserDto=userDto></ChangePasswordModal>
+
+@code {
+    PaginatedList<UserDto> paginatedList = new PaginatedList<UserDto>();
+    IEnumerable<UserDto> users;
+    UserDto userDto = new UserDto();
+
+    int? pageNumber = 1;
+    string customHeader = string.Empty;
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+    private void ShowMessage(ToastType toastType, string message) => messages.Add(CreateToastMessage(toastType, message));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string message)
+    => new ToastMessage
+    {
+        Type = toastType,
+        Message = message,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private async Task GetData()
+    {
+        paginatedList = await service.GetPagedResult<UserDto>(pageNumber, "User/GetUsersPaged");
+        users = paginatedList.Items;
+    }
+
+    private void PrepareForAdd()
+    {
+        userDto = new UserDto();
+        customHeader = "Add User";
+    }
+
+    private void PrepareForEdit(UserDto userObj)
+    {
+        customHeader = "Edit User";
+        userDto = userObj;
+    }
+
+    private void PrepareForDelete(UserDto userObj)
+    {
+        userDto = userObj;
+    }
+
+    private void PrepareForChangePassword(UserDto userObj)
+    {
+        userDto = userObj;
+    }
+
+    private async Task Delete()
+    {
+        var task = await service.Delete(userDto.Id, "User/Delete");
+        if (task.Success)
+        {
+            await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+            await GetData();
+            userDto = new UserDto();
+        }
+        else
+        {
+            await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+            ShowMessage(ToastType.Danger, task.Message);
+        }
+    }
+
+    private async void PageIndexChanged(int newPageNumber)
+    {
+        if (newPageNumber < 1 || newPageNumber > paginatedList.TotalPages)
+        {
+            return;
+        }
+
+        pageNumber = newPageNumber;
+        await GetData();
+        StateHasChanged();
+    }
+
+    private async void DataChanged()
+    {
+        await GetData();
+        StateHasChanged();
+    }
+
+    private void NavigateToItemsPage(int id)
+    {
+        NavigationManager.NavigateTo($"/items/{id}");
+    }
+}

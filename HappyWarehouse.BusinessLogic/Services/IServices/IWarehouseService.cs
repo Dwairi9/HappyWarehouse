@@ -2,6 +2,7 @@
 using HappyWarehouse.BusinessLogic.DTOs;
 using HappyWarehouse.BusinessLogic.DTOs.QueryOptions;
 using X.PagedList;
+using HappyWarehouse.Shared.Common;
 
 namespace HappyWarehouse.BusinessLogic.Services.IServices
 {
@@ -9,7 +10,7 @@ namespace HappyWarehouse.BusinessLogic.Services.IServices
     {
         Task<WarehouseDto> GetWarehouse(int id);
         Task<List<WarehouseDto>> GetWarehouses();
-        Task<IPagedList<WarehouseDto>> GetItemsPaged(QueryOption queryOption);
+        Task<PaginatedList<WarehouseDto>> GetWarehousesPaged(QueryOption queryOption);
         Task<QueryResult<bool>> AddWarehouse(WarehouseDto warehouseDto);
         Task<QueryResult<bool>> UpdateWarehouse(WarehouseDto warehouseDto);
         Task<QueryResult<bool>> DeleteWarehouse(int id);
